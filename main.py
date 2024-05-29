@@ -1,64 +1,113 @@
+import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-import numpy as np
 
-L = 10
-a0 = 0.529 # in A
-X, Y, Z = np.mgrid[-L:L:40j, -L:L:40j, -L:L:40j]
+# Constants
+a0 = 1  # Bohr radius, for simplicity, set to 1
 
-r = np.sqrt(X**2 + Y**2 + Z**2)
-theta = np.arccos(Z/r)
-phi = np.arctan2(Y, X)
+# Define the angular part
+def angular_part(l, m, theta, phi):
+    if l == 0:  # s-orbital
+        return (1 / (4 * np.pi))**0.5
+    elif l == 1:  # p-orbital
+        if m == 0:
+            return (3 / (4 * np.pi))**0.5 * np.cos(theta)
+        elif m == 1:
+            return (3 / (4 * np.pi))**0.5 * np.sin(theta) * np.cos(phi)
+        elif m == -1:
+            return (3 / (4 * np.pi))**0.5 * np.sin(theta) * np.sin(phi)
+    elif l == 2:  # d-orbital
+        if m == 0:
+            return (5 / (4 * np.pi))**0.5 * (3 * np.cos(theta)**2 - 1)
+        elif m == 1:
+            return (15 / (4 * np.pi))**0.5 * np.cos(theta) * np.sin(theta) * np.cos(phi)
+        elif m == -1:
+            return (15 / (4 * np.pi))**0.5 * np.cos(theta) * np.sin(theta) * np.sin(phi)
+        elif m == 2:
+            return (15 / (4 * np.pi))**0.5 * np.sin(theta)**2 * np.cos(2 * phi)
+        elif m == -2:
+            return (15 / (4 * np.pi))**0.5 * np.sin(theta)**2 * np.sin(2 * phi)
+    elif l == 3: # f-orbital
+        if m == 0:
+            return (7 / (16 * np.pi)) * (5 * np.cos(theta)**3 - 3 * np.cos(theta))
+        elif m == 1:
+            return (21 / (32 * np.pi)) * np.sin(theta) * (5 * np.cos(theta)**2 - 1) * np.cos(phi)
+        elif m == -1:
+            return (21 / (32 * np.pi)) * np.sin(theta) * (5 * np.cos(theta)**2 - 1) * np.sin(phi)
+        elif m == 2:
+            return (105 / (4 * np.pi)) * np.sin(theta)**2 * np.cos(theta) * np.cos(2 * phi)
+        elif m == -2:
+            return (105 / (4 * np.pi)) * np.sin(theta)**2 * np.cos(theta) * np.sin(2 * phi)
+        elif m == 3:
+            return (35 / (32 * np.pi)) * np.sin(theta)**3 * np.cos(3 * phi)
+        elif m == -3:
+            return (35 / (32 * np.pi)) * np.sin(theta)**3 * np.sin(3 * phi)
+    else:
+        raise ValueError(f"Unsupported l={l} or m={m}")
 
-sig = r/a0
+# Define the radial part
+def radial_part(n, l, r):
+    if n == 1 and l == 0:
+        return 2 * (1 / a0)**(3/2) * np.exp(-r / a0)
+    elif n == 2 and l == 0:
+        return (1 / (2 * a0)**(3/2)) * (2 - r / a0) * np.exp(-r / (2 * a0))
+    elif n == 2 and l == 1:
+        return (1 / (24 * a0**3))**0.5 * (r / a0) * np.exp(-r / (2 * a0))
+    elif n == 3 and l == 0:
+        return (2 / (27 * a0**3))**0.5 * (27 - 18 * (r / a0) + 2 * (r / a0)**2) * np.exp(-r / (3 * a0))
+    elif n == 3 and l == 1:
+        return (8 / (27 * a0**3))**0.5 * (1 - (r / (6 * a0))) * (r / a0) * np.exp(-r / (3 * a0))
+    elif n == 3 and l == 2:
+        return (1 / (81 * a0**3))**0.5 * (r / a0)**2 * np.exp(-r / (3 * a0))
+    elif n == 4 and l == 3:
+        return (4 / (3 * (2 * a0)**3))**0.5 * (1 - 3 * (r / (4 * a0)) + (3/2) * (r / (4 * a0))**2 - (r / (8 * a0))**3) * np.exp(-r / (4 * a0))
+    else:
+        raise ValueError(f"Unsupported n={n} or l={l}")
 
-# Radial part
-row_1 = 2 * sig
-R1s = a0 **(-3/2) * np.exp(-row_1/2) * 2
 
-row_2 = sig
-R2s = a0 **(-3/2) * np.exp(-row_2/2) * 8 ** (-1/2) * (2-row_2)
-R2p = a0 **(-3/2) * np.exp(-row_2/2) * 24**(-1/2) * row_2
+# Calculate the probability density
+def probability_density(n, l, m, r, theta, phi):
+    R = radial_part(n, l, r)
+    Y = angular_part(l, m, theta, phi)
+    return (R * Y)**2
 
-row_3 = (2/3)*sig
-R3s = a0 **(-3/2) * np.exp(-row_3/2) * (81*3)**(-1/2) * (6-6*row_3+row_3**2)
-R3p = a0 **(-3/2) * np.exp(-row_2/2) * (81*6)**(-1/2) * (4-row_3)*row_3
-R3d = a0**(-3/2) * np.exp(-row_3/2) * (81*30)**(-1/2) * row_3**2
+# Generate random points in spherical coordinates
+N = 10000
+r = np.random.exponential(scale=5*a0, size=N)
+theta = np.random.uniform(0, np.pi, N)
+phi = np.random.uniform(0, 2*np.pi, N)
 
-row_4 = (1/2)*sig
-R4s = a0**(-3/2) * np.exp(-row_4/2) * (1/96) * (24-(36*row_4)+12*row_4**2-row_4**3)
-R4p = a0**(-3/2) * np.exp(-row_4/2) * row_4 * (15/9)**(1/2) * (1/8) * (1 - row_4/2 + (3/64)*(row_4**2))
-R4d = (8/15)*(5**(1/2))*(4*row_4)**(3/2) * np.exp(-(1/2)*row_4) * (2*row_4 - ((1/4)*row_4)**2 + (8/3)*((1/4)*row_4)**3)
+# Convert spherical coordinates to Cartesian coordinates
+x = r * np.sin(theta) * np.cos(phi)
+y = r * np.sin(theta) * np.sin(phi)
+z = r * np.cos(theta)
 
-# Angular part 
-As = (4*np.pi)**(-1/2)
-Apz = (3/4*np.pi)**(1/2) * np.cos(theta)
-Apy = (3/4*np.pi)**(1/2) * np.sin(theta) * np.sin(phi)
-Apx = (3/4*np.pi)**(1/2) * np.sin(theta) * np.cos(phi)
-Adz2 = (5/4*np.pi)**(1/2) * (3*np.cos(theta)**2-1)
-Adxz = (15/4*np.pi)**(1/2) * np.cos(theta) * np.sin(theta) * np.cos(phi)
-Adyz = (15/4*np.pi)**(1/2) * np.cos(theta) * np.sin(theta) * np.sin(phi)
-Adxxyy = (5/4*np.pi)**(1/2) * np.sin(theta)**2 * np.cos(2*phi)
-Adxy = (5/4*np.pi)**(1/2) * np.sin(theta)**2 * np.sin(2*phi)
+def plot_orbital(n, l, m):
+    # Calculate the probability density for each point
+    prob_density = probability_density(n, l, m, r, theta, phi)
+    
+    # Normalize the probability density to use as point size
+    sizes = (prob_density / np.max(prob_density)) * 50
+    
+    # Plot the points
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    sc = ax.scatter(x, y, z, c=prob_density, cmap='viridis', s=sizes)
+    
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.set_title(f'{n}{["s", "p", "d", "f"][l]}_{m} Orbital')
+    
+    plt.colorbar(sc)
+    plt.show()
+    fig.savefig(f'image/plot_orbital({n}_{l}_{m}).png')
 
-# Define the orbital to plot
-values = R2s*As + R2p*Apz + R2p*Apy + R2p*Apx
-
-# Plot the orbital
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-
-# Normalize values for colormap
-norm_values = (values - np.min(values)) / (np.max(values) - np.min(values))
-
-# Define contour levels
-levels = np.linspace(np.min(norm_values), np.max(norm_values), 10)
-
-# Plot the isosurface
-isosurface = ax.contourf(X[:,:,0], Y[:,:,0], Z[:,:,0], norm_values[:,:,int(len(Z)/2)], levels=levels, cmap='plasma')
-
-# Add color bar
-cbar = fig.colorbar(isosurface, ax=ax, orientation='vertical')
-cbar.set_label('Normalized Value')
-
-plt.show()
+# Plot s, p, d orbitals
+plot_orbital(1, 0, 0)  # 1s orbital
+for m in range(0, 2):
+    plot_orbital(2, 1, m)  # 2p_z orbital
+for m in range(0, 3):
+    plot_orbital(3, 2, m)  # 3d_z^2 orbital
+for m in range(0, 4):
+    plot_orbital(4, 3, m)  # 4f_z^3 orbital
