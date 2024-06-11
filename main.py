@@ -5,7 +5,8 @@ from mpl_toolkits.mplot3d import Axes3D
 # Constants
 a0 = 1  # Bohr radius, for simplicity, set to 1
 
-# Define the angular part
+# 각 부분 정의
+# GPT 왈 : 이 함수는 궤도 각운동량 양자수 𝑙, 자기 양자수 𝑚 극좌표계의 각도 𝜃 및 𝜙를 입력받아 각 부분을 계산합니다. 이는 구면 조화 함수 𝑌𝑙𝑚를 계산하는 과정입니다.
 def angular_part(l, m, theta, phi):
     if l == 0:  # s-orbital
         return (1 / (4 * np.pi))**0.5
@@ -45,7 +46,7 @@ def angular_part(l, m, theta, phi):
     else:
         raise ValueError(f"Unsupported l={l} or m={m}")
 
-# Define the radial part
+# 방사 부분 정의
 def radial_part(n, l, r):
     if n == 1 and l == 0:
         return 2 * (1 / a0)**(3/2) * np.exp(-r / a0)
@@ -65,19 +66,19 @@ def radial_part(n, l, r):
         raise ValueError(f"Unsupported n={n} or l={l}")
 
 
-# Calculate the probability density
+# 확률 밀도 함수 계산
 def probability_density(n, l, m, r, theta, phi):
     R = radial_part(n, l, r)
     Y = angular_part(l, m, theta, phi)
     return (R * Y)**2
 
-# Generate random points in spherical coordinates
+# 무작위 점 생성 후 구 좌표계에서 분포시킴
 N = 10000
 r = np.random.exponential(scale=5*a0, size=N)
 theta = np.random.uniform(0, np.pi, N)
 phi = np.random.uniform(0, 2*np.pi, N)
 
-# Convert spherical coordinates to Cartesian coordinates
+# 구 좌표를 직교 좌표로 변환
 x = r * np.sin(theta) * np.cos(phi)
 y = r * np.sin(theta) * np.sin(phi)
 z = r * np.cos(theta)
@@ -92,7 +93,7 @@ def plot_orbital(n, l, m):
     # Plot the points
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    sc = ax.scatter(x, y, z, c=prob_density, cmap='viridis', s=sizes)
+    sc = ax.scatter(x, y, z, c=prob_density, cmap='plasma', s=sizes)
     
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
@@ -101,7 +102,7 @@ def plot_orbital(n, l, m):
     
     plt.colorbar(sc)
     plt.show()
-    fig.savefig(f'image/plot_orbital({n}_{l}_{m}).png')
+    # fig.savefig(f'image/plot_orbital({n}_{l}_{m}).png')
 
 # Plot s, p, d orbitals
 plot_orbital(1, 0, 0)  # 1s orbital
